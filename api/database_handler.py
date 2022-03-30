@@ -69,12 +69,21 @@ class DatabaseWrapper:
         return joke_num, self._jokes_df["jokes"][joke_num]
     
     def _add_joke_rating(self, joke_num: int, rating: int):
-        import ipdb; ipdb.set_trace()
         self._user_item_df[f"joke_{joke_num}"][self._current_user_index] = rating
 
     def save_changes_to_db(self):
         self._user_item_df.to_csv("user_item_matrix.csv")
         self._users_df.to_csv("all_users.csv")
+
+    def _get_recommended_joke(self):
+        pass # TODO: implement matrix factorization
+
+    def get_next_joke(self):
+        pass # TODO: checks how many jokes have been rated and get next one in accordance
+
+    def _get_num_jokes_rated(self):
+        return self._user_item_df["num_ratings"][self._current_user_index]
+
 
 
 tmp = DatabaseWrapper(user_name="shelly")
