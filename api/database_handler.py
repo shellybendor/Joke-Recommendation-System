@@ -34,18 +34,23 @@ The row number corresponds to the joke ID
 
 
 
-class TmpName:
+class DatabaseWrapper:
     NOT_RATED = 99
 
-    def __init__(self):
+    def __init__(self, user_name: str):
         self._user_item_df = pd.read_csv("user_item_matrix.csv")
         self._users_df = pd.read_csv("all_users.csv")
         self._jokes_df = pd.read_csv("all_jokes.csv")
         self._current_max_user_index = self._user_item_df.shape[0] - 1
         self._num_jokes = self._jokes_df.shape[0]
-        self._current_user_index = None
+        if not self._check_if_user_exists(user_name):
+            self._add_new_user(user_name)
+        self._current_user_index = int(self._users_df[self._users_df.user_name == user_name]['user_index'])
 
-    def _add_new_user(self, user_name):
+    def _check_if_user_exists(self, user_name: str):
+        return user_name in self._users_df["user_name"].values
+
+    def _add_new_user(self, user_name: str):
         self._current_max_user_index += 1
         new_user = pd.DataFrame([[user_name, self._current_max_user_index]], columns=['user_name', 'user_index'])
         self._users_df = pd.concat([self._users_df, new_user], ignore_index=True)
@@ -55,22 +60,25 @@ class TmpName:
         self._user_item_df.loc[len(self._user_item_df)] = new_rating_arr
         self._user_item_df.reset_index()
     
-    def _check_if_user_exists(self, user_name):
-        return user_name in self._users_df["user_name"].values
-    
-    def set_user(self, user_name):
-        if not self._check_if_user_exists(user_name):
-            self._add_new_user(user_name)
-        self._current_user_index = int(self._users_df[self._users_df.user_name == 'shelly']['user_index'])
-    
-    def _get_random_joke(self):
+    def _get_random_new_joke(self):
         found_new_joke = False
         while not found_new_joke:
             joke_num = random.randint(0, self._num_jokes - 1)
             if self._user_item_df[f"joke_{joke_num}"][self._current_user_index] == self.NOT_RATED:
                 found_new_joke = True
         return joke_num, self._jokes_df["jokes"][joke_num]
+    
+    def _add_joke_rating(self, joke_num: int, rating: int):
+        import ipdb; ipdb.set_trace()
+        self._user_item_df[f"joke_{joke_num}"][self._current_user_index] = rating
 
-# tmp = TmpName()
-# tmp.set_user("shelly")
-# print(tmp._get_random_joke())
+    def save_changes_to_db(self):
+        self._user_item_df.to_csv("user_item_matrix.csv")
+        self._users_df.to_csv("all_users.csv")
+
+
+tmp = DatabaseWrapper(user_name="shelly")
+num, joke = tmp._get_random_new_joke()
+print(joke)
+rating = int(input("how was the joke?"))
+tmp._add_joke_rating(num, rating)
