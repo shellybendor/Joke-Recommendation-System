@@ -31,7 +31,98 @@ The row number corresponds to the joke ID
 #     added = pd.concat([user_df, new_user], ignore_index=True)
 #     added.to_excel(Path("..", "Users.xlsx"), index=False)
 
+class MF():
+    NULL = 99
+    
+    def __init__(self, R, K, alpha, beta, iterations):
+        """
+        Perform matrix factorization to predict empty
+        entries in a matrix.
 
+        Arguments
+        - R (ndarray)   : user-item rating matrix
+        - K (int)       : number of latent dimensions
+        - alpha (float) : learning rate
+        - beta (float)  : regularization parameter
+        """
+
+        self.R = R
+        self.num_users, self.num_items = R.shape
+        self.K = K
+        self.alpha = alpha
+        self.beta = beta
+        self.iterations = iterations
+
+    def train(self):
+        # Initialize user and item latent feature matrice
+        self.P = np.random.normal(scale=1./self.K, size=(self.num_users, self.K))
+        self.Q = np.random.normal(scale=1./self.K, size=(self.num_items, self.K))
+
+        # Initialize the biases
+        self.b_u = np.zeros(self.num_users)
+        self.b_i = np.zeros(self.num_items)
+        self.b = np.mean(self.R[self.R != self.NULL])
+
+        # Create a list of training samples
+        self.samples = [
+            (i, j, self.R[i, j])
+            for i in range(self.num_users)
+            for j in range(self.num_items)
+            if self.R[i, j] != self.NULL
+        ]
+
+        # Perform stochastic gradient descent for number of iterations
+        training_process = []
+        for i in range(self.iterations):
+            np.random.shuffle(self.samples)
+            self.sgd()
+            mse = self.mse()
+            training_process.append((i, mse))
+            if (i+1) % 10 == 0:
+                print("Iteration: %d ; error = %.4f" % (i+1, mse))
+
+        return training_process
+
+    def mse(self):
+        """
+        A function to compute the total mean square error
+        """
+        xs, ys = np.where(self.R == self.NULL)
+        predicted = self.full_matrix()
+        error = 0
+        for x, y in zip(xs, ys):
+            error += pow(self.R[x, y] - predicted[x, y], 2)
+        return np.sqrt(error)
+
+    def sgd(self):
+        """
+        Perform stochastic graident descent
+        """
+        for i, j, r in self.samples:
+            # Computer prediction and error
+            prediction = self.get_rating(i, j)
+            e = (r - prediction)
+
+            # Update biases
+            self.b_u[i] += self.alpha * (e - self.beta * self.b_u[i])
+            self.b_i[j] += self.alpha * (e - self.beta * self.b_i[j])
+
+            # Update user and item latent feature matrices
+            self.P[i, :] += self.alpha * (e * self.Q[j, :] - self.beta * self.P[i,:])
+            self.Q[j, :] += self.alpha * (e * self.P[i, :] - self.beta * self.Q[j,:])
+
+    def get_rating(self, i, j):
+        """
+        Get the predicted rating of user i and item j
+        """
+        prediction = self.b + self.b_u[i] + self.b_i[j] + self.P[i, :].dot(self.Q[j, :].T)
+        return prediction
+
+    def full_matrix(self):
+        """
+        Computer the full matrix using the resultant biases, P and Q
+        """
+        return self.b + self.b_u[:,np.newaxis] + self.b_i[np.newaxis:,] + self.P.dot(self.Q.T)
 
 
 class DatabaseWrapper:
@@ -69,11 +160,21 @@ class DatabaseWrapper:
         return joke_num, self._jokes_df["jokes"][joke_num]
     
     def _add_joke_rating(self, joke_num: int, rating: int):
+        if self._user_item_df[f"joke_{joke_num}"][self._current_user_index] != self.NOT_RATED:
+            raise Exception(f"Joke {joke_num} has already been rated by user with id: {self._current_user_index}")
         self._user_item_df[f"joke_{joke_num}"][self._current_user_index] = rating
 
     def save_changes_to_db(self):
         self._user_item_df.to_csv("user_item_matrix.csv")
         self._users_df.to_csv("all_users.csv")
+    
+    def matrix_factorization(self):
+        latent_features_num = 2  # TODO: calculate best number for this
+        import ipdb; ipdb.set_trace()
+        mf = MF(self._user_item_df, K=latent_features_num, alpha=0.1, beta=0.01, iterations=20)
+        print(mf.train())
+        predicted = mf.full_matrix()
+        
 
     def _get_recommended_joke(self):
         pass # TODO: implement matrix factorization
@@ -87,7 +188,8 @@ class DatabaseWrapper:
 
 
 tmp = DatabaseWrapper(user_name="shelly")
-num, joke = tmp._get_random_new_joke()
-print(joke)
-rating = int(input("how was the joke?"))
-tmp._add_joke_rating(num, rating)
+# num, joke = tmp._get_random_new_joke()
+# print(joke)
+# rating = int(input("how was the joke?"))
+# tmp._add_joke_rating(num, rating)
+tmp.matrix_factorization()
