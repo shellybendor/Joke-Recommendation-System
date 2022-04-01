@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import random
+from matrix_factorization import BaselineModel, KernelMF, train_update_test_split
+from sklearn.metrics import mean_squared_error
 # import seaborn as sns
 # import matplotlib.pyplot as plt
 # from sklearn.cluster import KMeans
@@ -64,12 +66,8 @@ class MF():
         self.b = np.mean(self.R[self.R != self.NULL])
 
         # Create a list of training samples
-        self.samples = [
-            (i, j, self.R[i, j])
-            for i in range(self.num_users)
-            for j in range(self.num_items)
-            if self.R[i, j] != self.NULL
-        ]
+        import ipdb; ipdb.set_trace()
+        self.samples = [(i, j, self.R[f"joke_{j}"][i]) for i in range(self.num_users) for j in range(1, self.num_items + 1) if self.R[f"joke_{j}"][i] != self.NULL]
 
         # Perform stochastic gradient descent for number of iterations
         training_process = []
@@ -96,7 +94,7 @@ class MF():
 
     def sgd(self):
         """
-        Perform stochastic graident descent
+        Perform stochastic gradient descent
         """
         for i, j, r in self.samples:
             # Computer prediction and error
@@ -169,11 +167,39 @@ class DatabaseWrapper:
         self._users_df.to_csv("all_users.csv")
     
     def matrix_factorization(self):
-        latent_features_num = 2  # TODO: calculate best number for this
+        # latent_features_num = 2  # TODO: calculate best number for this
+        jokes_only = self._user_item_df.drop('num_ratings', axis=1)
+        jokes_only.replace(self.NOT_RATED, np.nan, inplace=True)
+        jokes_only = jokes_only[~np.isnan(jokes_only)]
         import ipdb; ipdb.set_trace()
-        mf = MF(self._user_item_df, K=latent_features_num, alpha=0.1, beta=0.01, iterations=20)
-        print(mf.train())
-        predicted = mf.full_matrix()
+        # mf = MF(jokes_only, K=latent_features_num, alpha=0.1, beta=0.01, iterations=20)
+        # print(mf.train())
+        # predicted = mf.full_matrix()
+        (
+            X_train_initial,
+            y_train_initial,
+            X_train_update,
+            y_train_update,
+            X_test_update,
+            y_test_update,
+        ) = train_update_test_split(jokes_only, frac_new_users=0.2)
+
+        # Initial training
+        matrix_fact = KernelMF(n_epochs=20, n_factors=100, verbose=1, lr=0.001, reg=0.005)
+        matrix_fact.fit(X_train_initial, y_train_initial)
+
+        # Update model with new users
+        matrix_fact.update_users(
+            X_train_update, y_train_update, lr=0.001, n_epochs=20, verbose=1
+        )
+        pred = matrix_fact.predict(X_test_update)
+        rmse = mean_squared_error(y_test_update, pred, squared=False)
+        print(f"\nTest RMSE: {rmse:.4f}")
+
+        # Get recommendations
+        user = 200
+        items_known = X_train_initial.query("user_id == @user")["item_id"]
+        matrix_fact.recommend(user=user, items_known=items_known)
         
 
     def _get_recommended_joke(self):
