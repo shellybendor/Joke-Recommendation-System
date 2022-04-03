@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 import random
-from matrix_factorization import BaselineModel, KernelMF, train_update_test_split
+from matrix_factorization import KernelMF, train_update_test_split
 from sklearn.metrics import mean_squared_error
 
 
@@ -10,7 +10,7 @@ class DatabaseWrapper:
     NOT_RATED = 99
 
     def __init__(self):
-        self._user_item_df = pd.read_csv("user_item_matrix.csv")
+        self._user_item_df = pd.read_csv("user_item_matrix.csv", dtype=np.float32)
         self._users_df = pd.read_csv("all_users.csv")
         self._jokes_df = pd.read_csv("all_jokes.csv")
         self._current_max_user_index = self._user_item_df.shape[0] - 1
@@ -21,7 +21,7 @@ class DatabaseWrapper:
     
     def _get_user_index(self, user_name: str) -> int:
         if not self._check_if_user_exists(user_name):
-            self._add_new_user(user_name)
+            self.add_new_user(user_name)
         return int(self._users_df[self._users_df.user_name == user_name]['user_index'])
 
     def _check_if_user_exists(self, user_name: str):
@@ -38,25 +38,26 @@ class DatabaseWrapper:
             self._user_item_df.loc[len(self._user_item_df)] = new_rating_arr
             self._user_item_df.reset_index()
     
-    def _get_random_new_joke(self, user_name: str):
+    def _get_random_new_joke(self, user_id: int):
         # TODO: make this better, randomize one choice of not null
         found_new_joke = False
         while not found_new_joke:
             joke_num = random.randint(1, self._num_jokes)
-            if self._user_item_df[f"joke_{joke_num}"][self._get_user_index(user_name)] == self.NOT_RATED:
+            if self._user_item_df[f"joke_{joke_num}"][user_id] == self.NOT_RATED:
                 found_new_joke = True
         return joke_num, self._jokes_df["jokes"][joke_num]
     
     def _add_joke_rating(self, user_name: str, joke_num: int, rating: int):
-        user_id = self._get_user_index(user_name)
-        if self._user_item_df[f"joke_{joke_num}"][user_id] != self.NOT_RATED:
-            raise Exception(f"Joke {joke_num} has already been rated by user with id: {user_id}")
-        self._user_item_df.loc[f"joke_{joke_num}", user_id] = rating
-        self._user_item_df.loc["num_rating", user_id] += 1
-        self._rating.loc[len(self._rating)] = np.array([user_id, joke_num, rating])
-        ratings_for_update = self._ratings.query("user_id == @user")
+        user_ind = self._get_user_index(user_name)
+        if self._user_item_df[f"joke_{joke_num}"][user_ind] != self.NOT_RATED:
+            raise Exception(f"Joke {joke_num} has already been rated by user with id: {user_ind}")
+        self._user_item_df.loc[f"joke_{joke_num}", user_ind] = rating
+        self._user_item_df.loc["num_ratings", user_ind] = self._user_item_df["num_ratings"][user_ind] + 1
+        self._ratings.loc[len(self._ratings)] = np.array([user_ind, f"joke_{joke_num}", rating])
+        ratings_for_update = self._ratings[self._ratings["user_id"].astype(int) == user_ind]
+        # ratings_for_update = self._ratings.query("user_id == @user_ind")
         self._mf.update_users(
-            ratings_for_update[["user_id", "item_id"]], ratings_for_update["rating"], lr=0.001, n_epochs=20, verbose=0
+            ratings_for_update[["user_id", "item_id"]], ratings_for_update["rating"].astype(np.float32), lr=0.001, n_epochs=20, verbose=0
         )
 
     def save_changes_to_db(self):
@@ -95,20 +96,20 @@ class DatabaseWrapper:
         rmse = mean_squared_error(y_test_update, pred, squared=False)
         print(f"\nTest RMSE: {rmse:.4f}")        
 
-    def _get_recommended_joke(self, user: int):
+    def _get_recommended_joke(self, user: str):
         items_known = self._ratings.query("user_id == @user")["item_id"]
         best = self._mf.recommend(user=user, items_known=items_known, amount=1, include_user=False)
-        import ipdb; ipdb.set_trace()
         joke_num = best["item_id"].item().replace("joke_", "")
         return joke_num, self._jokes_df["jokes"][int(joke_num)]
-        # TODO: extract from here the most recommended joke and its id
 
     def get_joke(self, user_name: str):
         user = self._get_user_index(user_name)
         if self._get_num_jokes_rated(user) < 10:
+            print("Getting random joke")
             return self._get_random_new_joke(user)
-        else: 
-            return self._get_recommended_joke(user)
+        else:
+            print("Getting recommened joke")
+            return self._get_recommended_joke(user_name)
 
     def _get_num_jokes_rated(self, user: int):
         return self._user_item_df["num_ratings"][user]
@@ -116,9 +117,12 @@ class DatabaseWrapper:
 
 
 tmp = DatabaseWrapper()
+# tmp.evaluate_model()
+# import ipdb; ipdb.set_trace()
 tmp.add_new_user("shelly")
 while True:
     num, joke = tmp.get_joke("shelly")
     print(joke)
-    rating = int(input("how was the joke?"))
+    rating = float(input("how was the joke?"))
+    # import ipdb; ipdb.set_trace()
     tmp._add_joke_rating("shelly", num, rating)
