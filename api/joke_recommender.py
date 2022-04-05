@@ -1,8 +1,12 @@
+import random
+from re import X
 import numpy as np 
 import pandas as pd
-import random
+import matplotlib.pyplot as plt
 from matrix_factorization import KernelMF, train_update_test_split
 from sklearn.metrics import mean_squared_error
+from numpy.polynomial.polynomial import polyfit
+import seaborn as sns
 
 
 class JokeRecommender:
@@ -14,7 +18,7 @@ class JokeRecommender:
         self._jokes_df = pd.read_csv("all_jokes.csv")
         self._current_max_user_index = self._user_item_df.shape[0] - 1
         self._num_jokes = self._jokes_df.shape[0]
-        self._mf = KernelMF(n_epochs=20, n_factors=50, verbose=0, lr=0.001, reg=0.005, min_rating=-10, max_rating=10)
+        self._mf = KernelMF(n_epochs=20, n_factors=40, verbose=0, lr=0.001, reg=0.005, min_rating=-10, max_rating=10)
         self._ratings = self._preprocess_data()
         self._mf.fit(self._ratings[["user_id", "item_id"]], self._ratings["rating"])
     
@@ -82,7 +86,7 @@ class JokeRecommender:
         ) = train_update_test_split(eval_data, frac_new_users=0.2)
 
         # Initial training
-        matrix_fact = KernelMF(n_epochs=50, n_factors=50, verbose=1, lr=0.001, reg=0.005, min_rating=-10, max_rating=10)
+        matrix_fact = KernelMF(n_epochs=20, n_factors=40, verbose=1, lr=0.001, reg=0.005, min_rating=-10, max_rating=10)
         matrix_fact.fit(X_train_initial, y_train_initial)
 
         # Update model with new users
@@ -92,6 +96,26 @@ class JokeRecommender:
 
         # Test model on predictions for "new" users
         pred = matrix_fact.predict(X_test_update)
+
+        # Create scatter plot of predictions
+        x = y_test_update.head(200)
+        y = pred[:200]
+        sns.regplot(x=x, y=y)
+        plt.plot([-10, 10], [-10, 10], '-')
+        plt.title('Scatter plot of 200 predictions')
+        plt.xlabel('Test set ratings')
+        plt.ylabel('Test set predicted ratings')
+        plt.show()
+
+        # x = y_test_update.tail(200)
+        # y = pred[-200:]
+        # sns.regplot(x=x, y=y)
+        # plt.plot([-10, 10], [-10, 10], '-')
+        # plt.title('Scatter plot of 200 predictions')
+        # plt.xlabel('Test set ratings')
+        # plt.ylabel('Test set predicted ratings')
+        # plt.show()
+
         rmse = mean_squared_error(y_test_update, pred, squared=False)
         norm_rmse = rmse / 20
         print(f"\nTest RMSE: {rmse:.4f}")
@@ -118,19 +142,19 @@ class JokeRecommender:
 
 
 recommender = JokeRecommender()
-username = input("Welcome to the joke recommender! What is your name? \n")
-recommender.add_new_user(username)
-print(f"Welcome {username}!")
-keep_going = True
-while keep_going:
-    num, joke = recommender.get_joke(username)
-    print(joke, end="\n\n")
-    rating = float(input("How would you rate the joke from -10.0 to 10? "))
-    recommender._add_joke_rating(username, num, rating)
-    answer = input("Want another joke? y/n ")
-    keep_going = (answer == "y")
-print("Thanks for taking part. Please wait while we save everything :)")
-recommender.save_changes_to_db()
-answer = input("Evaluate Model? y/n ")
-if (answer == "y"):
-    recommender.evaluate_model()
+# username = input("Welcome to the joke recommender! What is your name? \n")
+# recommender.add_new_user(username)
+# print(f"Welcome {username}!")
+# keep_going = True
+# while keep_going:
+#     num, joke = recommender.get_joke(username)
+#     print(joke, end="\n\n")
+#     rating = float(input("How would you rate the joke from -10.0 to 10? "))
+#     recommender._add_joke_rating(username, num, rating)
+#     answer = input("Want another joke? y/n ")
+#     keep_going = (answer == "y")
+# print("Thanks for taking part. Please wait while we save everything :)")
+# recommender.save_changes_to_db()
+# answer = input("Evaluate Model? y/n ")
+# if (answer == "y"):
+recommender.evaluate_model()
