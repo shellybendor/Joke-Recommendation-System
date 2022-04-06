@@ -1,12 +1,15 @@
 import random
 from re import X
+from tkinter import N
 import numpy as np 
 import pandas as pd
 import matplotlib.pyplot as plt
 from matrix_factorization import KernelMF, train_update_test_split
 from sklearn.metrics import mean_squared_error
-from numpy.polynomial.polynomial import polyfit
 import seaborn as sns
+# import nltk
+# from nltk.corpus import stopwords
+# nltk.download('stopwords')
 
 
 class JokeRecommender:
@@ -19,9 +22,25 @@ class JokeRecommender:
         self._current_max_user_index = self._user_item_df.shape[0] - 1
         self._num_jokes = self._jokes_df.shape[0]
         self._mf = KernelMF(n_epochs=20, n_factors=40, verbose=0, lr=0.001, reg=0.005, min_rating=-10, max_rating=10)
-        self._ratings = self._preprocess_data()
+        self._ratings = self._preprocess_data(self._user_item_df)
         self._mf.fit(self._ratings[["user_id", "item_id"]], self._ratings["rating"])
     
+    def _save_content_matrix(self):
+        # stop_words = set(stopwords.words('english'))
+        # joke_words = ' '.join(self._jokes_df['jokes']).lower().split()
+        # filtered_words = [w for w in joke_words if not w in stop_words]
+        # filtered_words = pd.Series(filtered_words).value_counts()[350:500]
+        # print(filtered_words.to_string())
+        self._content_df = self._user_item_df.copy()
+        common_words = pd.read_csv("common_words_in_jokes.csv")
+        for word in common_words["word"]:
+            content_ratings_arr = [self.NOT_RATED for _ in range(self._num_jokes + 1) ]
+            for joke_num in range(self._jokes_df["jokes"].shape[0]):
+                if word in self._jokes_df["jokes"][joke_num].lower():
+                    content_ratings_arr[joke_num + 1] = 10
+            self._content_df.loc[len(self._content_df)] = content_ratings_arr
+                
+
     def _get_user_index(self, user_name: str) -> int:
         if not self._check_if_user_exists(user_name):
             self.add_new_user(user_name)
@@ -66,14 +85,18 @@ class JokeRecommender:
         self._user_item_df.to_csv("user_item_matrix.csv", index=False)
         self._users_df.to_csv("all_users.csv", index=False)
 
-    def _preprocess_data(self):
-        user_items_ratings_df = self._user_item_df.drop('num_ratings', axis=1)
-        user_items_ratings_df.replace(self.NOT_RATED, np.nan, inplace=True)
-        user_items_ratings_df = user_items_ratings_df.stack().reset_index().rename(columns={'level_0': 'user_id', 'level_1': 'item_id', 0: 'rating'})
-        return user_items_ratings_df
+    def _preprocess_data(self, df):
+        new_df = df.drop('num_ratings', axis=1)
+        new_df.replace(self.NOT_RATED, np.nan, inplace=True)
+        new_df = new_df.stack().reset_index().rename(columns={'level_0': 'user_id', 'level_1': 'item_id', 0: 'rating'})
+        return new_df
 
-    def evaluate_model(self):
-        counts = self._ratings["user_id"].value_counts()
+    def evaluate_model(self, with_content=False):
+        eval_df = self._ratings
+        if with_content:
+            self._save_content_matrix()
+            eval_df = self._preprocess_data(self._content_df)
+        counts = eval_df["user_id"].value_counts()
         eval_data = self._ratings[self._ratings.user_id.isin(counts.index[counts.gt(1)])]
         # Splitting data into existing user ratings for training, new user's ratings for training, and new user's ratings for testing.
         (
@@ -106,15 +129,6 @@ class JokeRecommender:
         plt.xlabel('Test set ratings')
         plt.ylabel('Test set predicted ratings')
         plt.show()
-
-        # x = y_test_update.tail(200)
-        # y = pred[-200:]
-        # sns.regplot(x=x, y=y)
-        # plt.plot([-10, 10], [-10, 10], '-')
-        # plt.title('Scatter plot of 200 predictions')
-        # plt.xlabel('Test set ratings')
-        # plt.ylabel('Test set predicted ratings')
-        # plt.show()
 
         rmse = mean_squared_error(y_test_update, pred, squared=False)
         norm_rmse = rmse / 20
@@ -158,3 +172,4 @@ recommender = JokeRecommender()
 # answer = input("Evaluate Model? y/n ")
 # if (answer == "y"):
 recommender.evaluate_model()
+recommender.evaluate_model(with_content=True)
