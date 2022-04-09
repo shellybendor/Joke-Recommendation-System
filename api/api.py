@@ -1,23 +1,34 @@
 from flask import Flask, request
 from flask_cors import CORS #comment this on deployment
-from database_handler import add_user_to_excel
+from joke_recommender import JokeRecommender
 
 
 app = Flask(__name__)
 CORS(app) #comment this on deployment
 
-@app.route('/api/joke')
-def get_joke():
-    return {'joke': "knock knock"}
+recommender = JokeRecommender()
 
-@app.route('/add_user', methods=['POST'])
-def add_user():
-    # print("adding user")
+@app.route('/api/joke', methods=['POST'])
+def get_joke():
+    print("getting joke")
     data = request.get_json()
-    # print(data)
     user = data['user']
-    add_user_to_excel(user, 0)
+    joke = recommender.get_joke(user)
+    print(joke)
+    return {'joke': joke}
+
+@app.route('/api/add_user', methods=['POST'])
+def add_user():
+    print("setting user")
+    data = request.get_json()
+    user = data['user']
+    recommender.add_new_user(user)
     return "Success"
+
+# TODO: add route for logout + saving changes to db
+
+if __name__ == '__main__':
+    app.run()
     
 
 

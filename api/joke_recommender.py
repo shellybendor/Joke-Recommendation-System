@@ -12,6 +12,7 @@ class JokeRecommender:
     NOT_RATED = 99
 
     def __init__(self):
+        print("STARTING INIT")
         self._user_item_df = pd.read_csv("user_item_matrix.csv", dtype=np.float32)
         self._users_df = pd.read_csv("all_users.csv")
         self._jokes_df = pd.read_csv("all_jokes.csv")
@@ -20,6 +21,7 @@ class JokeRecommender:
         self._mf = KernelMF(n_epochs=20, n_factors=40, verbose=0, lr=0.001, reg=0.005, min_rating=-10, max_rating=10)
         self._ratings = self._preprocess_data(self._user_item_df)
         self._mf.fit(self._ratings[["user_id", "item_id"]], self._ratings["rating"])
+        print("DONE INIT")
     
     def _save_content_matrix(self):
         common_words = pd.read_csv("common_words_in_jokes.csv")
@@ -52,6 +54,7 @@ class JokeRecommender:
             new_rating_arr.insert(0, 0)  # setting number of ratings for new user
             self._user_item_df.loc[len(self._user_item_df)] = new_rating_arr
             self._user_item_df.reset_index()
+            print(self._users_df)
     
     def _get_random_new_joke(self, user_id: int):
         unheard_jokes = self._user_item_df.columns[(self._user_item_df == self.NOT_RATED).iloc[user_id]].tolist()
@@ -147,21 +150,21 @@ class JokeRecommender:
 
 
 
-recommender = JokeRecommender()
-username = input("Welcome to the joke recommender! What is your name? \n")
-recommender.add_new_user(username)
-print(f"Welcome {username}!")
-keep_going = True
-while keep_going:
-    num, joke = recommender.get_joke(username)
-    print(joke, end="\n\n")
-    rating = float(input("How would you rate the joke from -10.0 to 10? "))
-    recommender._add_joke_rating(username, num, rating)
-    answer = input("Want another joke? y/n ")
-    keep_going = (answer == "y")
-print("Thanks for taking part. Please wait while we save everything :)")
-recommender.save_changes_to_db()
-answer = input("Evaluate Model? y/n ")
-if (answer == "y"):
-    recommender.evaluate_model()
-    recommender.evaluate_model(with_content=True)
+# recommender = JokeRecommender()
+# username = input("Welcome to the joke recommender! What is your name? \n")
+# recommender.add_new_user(username)
+# print(f"Welcome {username}!")
+# keep_going = True
+# while keep_going:
+#     num, joke = recommender.get_joke(username)
+#     print(joke, end="\n\n")
+#     rating = float(input("How would you rate the joke from -10.0 to 10? "))
+#     recommender._add_joke_rating(username, num, rating)
+#     answer = input("Want another joke? y/n ")
+#     keep_going = (answer == "y")
+# print("Thanks for taking part. Please wait while we save everything :)")
+# recommender.save_changes_to_db()
+# answer = input("Evaluate Model? y/n ")
+# if (answer == "y"):
+#     recommender.evaluate_model()
+#     recommender.evaluate_model(with_content=True)

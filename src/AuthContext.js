@@ -1,9 +1,7 @@
 import axios from 'axios';
 import React, {useContext, useState, useEffect} from 'react'
-import {auth, db, provider} from "./firebase-config"
-// import firebase from 'firebase';
+import {auth, provider} from "./firebase-config"
 import {signInWithPopup, signOut} from 'firebase/auth';
-// import { useNavigate } from 'react-router-dom';
 
 /**
  * Authentication context for user signup with firebase
@@ -16,34 +14,49 @@ import {signInWithPopup, signOut} from 'firebase/auth';
  }
 
 export function AuthProvider({children}) {
-    const [currentUser, setCurrentUser] = useState();
-    const [loading, setLoading] = useState(true);
+    const [currentUser, setCurrentUser] = useState("");
+    const [currentJoke, setCurrentJoke] = useState([null, 'Please wait while we get your joke']);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        const unsubscribe = auth.onAuthStateChanged(user => {
+            setCurrentUser(user)
+        })
+        return unsubscribe;
+    }, [])
 
     useEffect(() => {
         if (currentUser) {
-            axios.post("/add_user", {"user": currentUser}).then((response) => {
+            axios.post("/api/add_user", {user: currentUser.email}).then((response) => {
                 console.log(response);
+                getJoke();
             })
             .catch((err) => {
                 console.log(err);
-              });
+            });
         }
+        setLoading(false)
     }, [currentUser])
 
+    const getJoke = () => {
+        setLoading(true)
+        axios.post('api/joke', {user: currentUser.email}).then((response) => {
+          setCurrentJoke(response.data.joke);
+        })
+        .catch((err) => {
+            console.log(err);
+        });
+        setLoading(false)
+      };
+
     const signInWithGoogle = () => {
-        signInWithPopup(auth, provider).then((result) => {
-            localStorage.setItem("currentUser", result.user.uid);
-            setCurrentUser(result.user.email)
-          
-          })
-    
+        setLoading(true);
+        return signInWithPopup(auth, provider)    
     }
 
     const signout = () => {
-        signOut(auth).then(() => {
-            localStorage.clear();
-            setCurrentUser();
-        })
+        setLoading(true);
+        return signOut(auth)
     }
 
     const value = {
@@ -51,11 +64,13 @@ export function AuthProvider({children}) {
         setCurrentUser,
         signInWithGoogle,
         signout,
+        getJoke,
+        currentJoke,
     }
 
     return (
         <AuthContext.Provider value={value}>
-            {children}
+            {!loading && children}
         </AuthContext.Provider>
     )
 }
