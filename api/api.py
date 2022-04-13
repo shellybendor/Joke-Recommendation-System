@@ -37,10 +37,15 @@ def add_user():
     recommender.add_new_user(user)
     return "Added User"
 
+@app.route('/api/close_session', methods=['POST'])
+def close_session():
+    print("setting user")
+    data = request.get_json()
+    user = data['user']
+    recommender.add_new_user(user)
+    return "Added User"
+
 # TODO: add route for logout + saving changes to db
 
 if __name__ == '__main__':
     app.run()
-    
-
-

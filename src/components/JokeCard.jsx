@@ -4,7 +4,7 @@ import Select from "react-select";
 
 
 export default function JokeCard() {
-    const {currentUser, signout, getJoke, currentJoke, setRating, rating, rateJoke} = useAuth();
+    const {currentUser, signout, currentJoke, setRating, rating, rateJoke, loading} = useAuth();
     const ratings = [
         { label: "+10", value: 10 },
         { label: "+9", value: 9 },
@@ -57,7 +57,7 @@ export default function JokeCard() {
             onChange={handler}
             styles={colourStyles}/>
             </div>
-            <button onClick={rateJoke} disabled={rating == "Rate the joke"}>Get new joke!</button>
+            <button onClick={rateJoke} disabled={rating == "Rate the joke" || loading}>Get new joke!</button>
             <button onClick={signout}>Signout</button>
         </div>
     )
