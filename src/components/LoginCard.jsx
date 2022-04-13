@@ -10,7 +10,7 @@ export default function LoginCard() {
             <h2>Welcome to 'Your Humor'!</h2>
             <p>After rating 10 jokes, I will recommend jokes based on your humor 🤣</p>
             <p>Please login to get recommended jokes.</p>
-            <button  onClick={signInWithGoogle}>Sign in with Google</button>
+            <button className="box-button" onClick={signInWithGoogle}>Sign in with Google</button>
         </div>
   )
 }

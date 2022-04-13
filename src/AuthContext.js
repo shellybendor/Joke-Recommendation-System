@@ -17,8 +17,7 @@ export function AuthProvider({children}) {
     const [currentUser, setCurrentUser] = useState("");
     const [currentJoke, setCurrentJoke] = useState([null, 'Please wait while we get your joke']);
     const [loading, setLoading] = useState(false);
-    const [rating, setRating] = useState("Rate the joke");
-    const [values, setValues] = useState([0])
+    const [rating, setRating] = useState([0])
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(user => {
@@ -45,7 +44,7 @@ export function AuthProvider({children}) {
         axios.post('api/get_joke', {user: currentUser.email}).then((response) => {
             setCurrentJoke(response.data.joke);
             setLoading(false)
-            setValues([0])
+            setRating([0])
         })
         .catch((err) => {
             console.log(err);
@@ -57,7 +56,7 @@ export function AuthProvider({children}) {
         axios.post('api/rate_joke', {
             user: currentUser.email,
             joke_num: currentJoke[0],
-            rating: values[0]}).then((response) => {
+            rating: rating[0]}).then((response) => {
                 console.log(response)
                 getJoke()
         })
@@ -87,8 +86,6 @@ export function AuthProvider({children}) {
         rating,
         rateJoke,
         loading,
-        values, 
-        setValues
     }
 
     return (

@@ -6,7 +6,7 @@ import {Track, TickLabel, Tick, Segment, Handle} from "../App"
 
 
 export default function JokeCard() {
-    const {currentUser, signout, currentJoke, setRating, rating, rateJoke, loading, values, setValues} = useAuth();
+    const {currentUser, signout, currentJoke, setRating, rating, rateJoke, loading} = useAuth();
     // const ratings = [
     //     { label: "+10", value: 10 },
     //     { label: "+9", value: 9 },
@@ -51,8 +51,8 @@ export default function JokeCard() {
         min: -10,
         max: 10,
         stepSize: 1,
-        values,
-        onChange: setValues
+        values: rating,
+        onChange: setRating
       });
 
 
@@ -69,7 +69,7 @@ export default function JokeCard() {
             styles={colourStyles}/>
         </div> */}
             <h4>Rate the Joke</h4>
-            <div key={values}>
+            <div key={rating}>
             <Track {...getTrackProps()}>
                 {ticks.map(({ value, getTickProps }) => (
                 <Tick {...getTickProps()}>
