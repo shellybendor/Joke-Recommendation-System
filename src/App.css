@@ -36,7 +36,7 @@ body {
   margin: 2rem;
 }
 
-.box button {
+.box-button {
   background-color: rebeccapurple;
   border:0;
   border-radius: 3px;
@@ -47,15 +47,15 @@ body {
   cursor: pointer;
   transition: transform 0.2s ease-in;
 }
-.box button:active {
+.box-button:active {
   transform: scale(0.97);
 }
-.box button:disabled{
+.box-button:disabled{
   background-color: #cccccc;
   color: #666666;
 }
 
-.box button:focus {
+.box-button:focus {
   outline: none;
 }
 

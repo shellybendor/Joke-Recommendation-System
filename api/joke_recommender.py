@@ -1,5 +1,6 @@
 import random
 import re
+import pickle
 import numpy as np 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -18,11 +19,18 @@ class JokeRecommender:
         self._jokes_df = pd.read_csv("all_jokes.csv")
         self._current_max_user_index = self._user_item_df.shape[0] - 1
         self._num_jokes = self._jokes_df.shape[0]
-        self._mf = KernelMF(n_epochs=20, n_factors=40, verbose=0, lr=0.001, reg=0.005, min_rating=-10, max_rating=10)
         self._ratings = self._preprocess_data(self._user_item_df)
-        self._mf.fit(self._ratings[["user_id", "item_id"]], self._ratings["rating"])
+        self._unpickle_model()
         print("DONE INIT")
     
+    def _unpickle_model(self):
+        self._mf = pickle.load(open('model.pkl', 'rb'))  # loading the model
+    
+    def _train_and_pickle_model(self):
+        self._mf = KernelMF(n_epochs=20, n_factors=40, verbose=0, lr=0.001, reg=0.005, min_rating=-10, max_rating=10)
+        self._mf.fit(self._ratings[["user_id", "item_id"]], self._ratings["rating"])
+        pickle.dump(self._mf, open('model.pkl','wb'))
+
     def _save_content_matrix(self):
         common_words = pd.read_csv("common_words_in_jokes.csv")
         ind = pd.RangeIndex(start=self._user_item_df.shape[0], stop=self._user_item_df.shape[0] + common_words.shape[0], step=1)
@@ -78,6 +86,7 @@ class JokeRecommender:
     def save_changes_to_db(self):
         self._user_item_df.to_csv("user_item_matrix.csv", index=False)
         self._users_df.to_csv("all_users.csv", index=False)
+        self._train_and_pickle_model()
 
     def _preprocess_data(self, df):
         new_df = df.drop('num_ratings', axis=1)

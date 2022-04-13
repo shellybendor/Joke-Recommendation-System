@@ -18,6 +18,7 @@ export function AuthProvider({children}) {
     const [currentJoke, setCurrentJoke] = useState([null, 'Please wait while we get your joke']);
     const [loading, setLoading] = useState(false);
     const [rating, setRating] = useState("Rate the joke");
+    const [values, setValues] = useState([0])
 
     useEffect(() => {
         const unsubscribe = auth.onAuthStateChanged(user => {
@@ -43,12 +44,12 @@ export function AuthProvider({children}) {
         setLoading(true)
         axios.post('api/get_joke', {user: currentUser.email}).then((response) => {
             setCurrentJoke(response.data.joke);
-            setRating("Rate the joke")
+            setLoading(false)
+            setValues([0])
         })
         .catch((err) => {
             console.log(err);
         });
-        setLoading(false)
     };
     
     const rateJoke = () => {
@@ -56,14 +57,13 @@ export function AuthProvider({children}) {
         axios.post('api/rate_joke', {
             user: currentUser.email,
             joke_num: currentJoke[0],
-            rating: rating}).then((response) => {
+            rating: values[0]}).then((response) => {
                 console.log(response)
                 getJoke()
         })
         .catch((err) => {
             console.log(err);
         });
-        setLoading(false)
     };
 
     const signInWithGoogle = () => {
@@ -85,12 +85,15 @@ export function AuthProvider({children}) {
         currentJoke,
         setRating,
         rating,
-        rateJoke
+        rateJoke,
+        loading,
+        values, 
+        setValues
     }
 
     return (
         <AuthContext.Provider value={value}>
-            {!loading && children}
+            {children}
         </AuthContext.Provider>
     )
 }
