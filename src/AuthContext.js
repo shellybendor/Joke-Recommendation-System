@@ -55,11 +55,10 @@ export function AuthProvider({children}) {
         setLoading(true)
         axios.post('api/rate_joke', {
             user: currentUser.email,
-            joke_num: currentJoke[1],
+            joke_num: currentJoke[0],
             rating: rating}).then((response) => {
-                console.log(response.data)
-                console.log("rated!")
-            getJoke()
+                console.log(response)
+                getJoke()
         })
         .catch((err) => {
             console.log(err);

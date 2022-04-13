@@ -54,7 +54,7 @@ class JokeRecommender:
             new_rating_arr.insert(0, 0)  # setting number of ratings for new user
             self._user_item_df.loc[len(self._user_item_df)] = new_rating_arr
             self._user_item_df.reset_index()
-            print(self._users_df)
+            # print(self._users_df)
     
     def _get_random_new_joke(self, user_id: int):
         unheard_jokes = self._user_item_df.columns[(self._user_item_df == self.NOT_RATED).iloc[user_id]].tolist()
@@ -62,7 +62,7 @@ class JokeRecommender:
         joke_num = int(re.findall(r'\d+', new_joke)[0])
         return joke_num, self._jokes_df["jokes"][joke_num]
     
-    def _add_joke_rating(self, user_name: str, joke_num: int, rating: int):
+    def add_joke_rating(self, user_name: str, joke_num: int, rating: int):
         user_ind = self._get_user_index(user_name)
         if self._user_item_df[f"joke_{joke_num}"][user_ind] != self.NOT_RATED:
             raise Exception(f"Joke {joke_num} has already been rated by user with id: {user_ind}")
@@ -159,7 +159,7 @@ class JokeRecommender:
 #     num, joke = recommender.get_joke(username)
 #     print(joke, end="\n\n")
 #     rating = float(input("How would you rate the joke from -10.0 to 10? "))
-#     recommender._add_joke_rating(username, num, rating)
+#     recommender.add_joke_rating(username, num, rating)
 #     answer = input("Want another joke? y/n ")
 #     keep_going = (answer == "y")
 # print("Thanks for taking part. Please wait while we save everything :)")

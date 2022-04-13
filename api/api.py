@@ -14,19 +14,19 @@ def get_joke():
     data = request.get_json()
     user = data['user']
     joke = recommender.get_joke(user)
-    print(joke)
+    # print(joke)
     return {'joke': joke}
 
 
 @app.route('/api/rate_joke', methods=['POST'])
 def rate_joke():
-    print("getting joke")
+    print("rating joke")
     data = request.get_json()
     user = data['user']
     joke_num = data['joke_num']
     rating = data['rating']
-    print(user, joke_num, rating)
-    return "Success"
+    recommender.add_joke_rating(user, int(joke_num), int(rating))
+    return "Rated Joke"
 
 
 @app.route('/api/add_user', methods=['POST'])
@@ -35,7 +35,7 @@ def add_user():
     data = request.get_json()
     user = data['user']
     recommender.add_new_user(user)
-    return "Success"
+    return "Added User"
 
 # TODO: add route for logout + saving changes to db
 
