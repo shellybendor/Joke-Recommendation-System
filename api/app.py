@@ -2,7 +2,6 @@ from flask import Flask, request
 from flask_cors import CORS #comment this on deployment
 from joke_recommender import JokeRecommender
 
-
 app = Flask(__name__)
 CORS(app) #comment this on deployment
 
