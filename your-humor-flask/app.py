@@ -38,11 +38,9 @@ def add_user():
 
 @app.route('/close_session', methods=['POST'])
 def close_session():
-    print("setting user")
-    data = request.get_json()
-    user = data['user']
-    recommender.add_new_user(user)
-    return "Added User"
+    print("saving")
+    recommender.save_changes_to_db()
+    return "Saved"
 
 @app.route("/", methods=["GET"])
 def tmp():

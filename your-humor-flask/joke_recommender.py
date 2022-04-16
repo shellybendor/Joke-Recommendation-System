@@ -67,7 +67,7 @@ class JokeRecommender:
     def _get_random_new_joke(self, user_id: int):
         unheard_jokes = self._user_item_df.columns[(self._user_item_df == self.NOT_RATED).iloc[user_id]].tolist()
         new_joke = random.choice(unheard_jokes)
-        joke_num = int(re.findall(r'\d+', new_joke)[0])
+        joke_num = int(re.findall(r'\d+', new_joke)[0]) - 1
         return joke_num, self._jokes_df["jokes"][joke_num]
     
     def add_joke_rating(self, user_name: str, joke_num: int, rating: int):
