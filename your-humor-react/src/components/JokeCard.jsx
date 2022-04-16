@@ -5,7 +5,7 @@ import {Track, TickLabel, Tick, Segment, Handle} from "../App"
 
 
 export default function JokeCard() {
-    const {currentUser, logout, currentJoke, setRating, rating, rateJoke, loading} = useAuth();
+    const {currentUser, signout, currentJoke, setRating, rating, rateJoke, loading} = useAuth();
 
     const { getTrackProps, ticks, segments, handles } = useRanger({
         min: -10,
@@ -51,7 +51,7 @@ export default function JokeCard() {
             <br />
             <br />
             <button className="box-button" onClick={rateJoke} disabled={loading}>Get new joke!</button>
-            <button className="box-button" onClick={logout}>Signout</button>
+            <button className="box-button" onClick={signout}>Signout</button>
         </div>
     )
 }

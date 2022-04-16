@@ -75,16 +75,6 @@ export function AuthProvider({children}) {
         return signOut(auth)
     }
 
-    const logout = async () => {
-        signout()
-        axios.post('https://joke-recommender-flask.herokuapp.com/close_session').then((response) => {
-            console.log(response);
-        })
-        .catch((err) => {
-            console.log(err);
-        });
-    }
-
     const value = {
         currentUser,
         setCurrentUser,
@@ -95,8 +85,7 @@ export function AuthProvider({children}) {
         setRating,
         rating,
         rateJoke,
-        loading,
-        logout
+        loading
     }
 
     return (

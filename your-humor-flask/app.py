@@ -36,12 +36,6 @@ def add_user():
     recommender.add_new_user(user)
     return "Added User"
 
-@app.route('/close_session', methods=['POST'])
-def close_session():
-    print("saving")
-    recommender.save_changes_to_db()
-    return "Saved"
-
 @app.route("/", methods=["GET"])
 def tmp():
     return jsonify({"response":"Welcome to my app"})
