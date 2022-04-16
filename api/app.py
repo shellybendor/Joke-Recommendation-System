@@ -44,7 +44,7 @@ def close_session():
     recommender.add_new_user(user)
     return "Added User"
 
-# TODO: add route for logout + saving changes to db
 
 if __name__ == '__main__':
     app.run()
+    print("DONE")
