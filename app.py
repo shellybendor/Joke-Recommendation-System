@@ -47,4 +47,3 @@ def close_session():
 
 if __name__ == '__main__':
     app.run()
-    print("DONE")
