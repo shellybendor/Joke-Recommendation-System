@@ -28,7 +28,7 @@ export function AuthProvider({children}) {
 
     useEffect(() => {
         if (currentUser) {
-            axios.post("/api/add_user", {user: currentUser.email}).then((response) => {
+            axios.post("/add_user", {user: currentUser.email}).then((response) => {
                 console.log(response);
                 getJoke();
             })
@@ -41,7 +41,7 @@ export function AuthProvider({children}) {
 
     const getJoke = () => {
         setLoading(true)
-        axios.post('api/get_joke', {user: currentUser.email}).then((response) => {
+        axios.post('/get_joke', {user: currentUser.email}).then((response) => {
             setCurrentJoke(response.data.joke);
             setLoading(false)
             setRating([0])
@@ -53,7 +53,7 @@ export function AuthProvider({children}) {
     
     const rateJoke = () => {
         setLoading(true)
-        axios.post('api/rate_joke', {
+        axios.post('/rate_joke', {
             user: currentUser.email,
             joke_num: currentJoke[0],
             rating: rating[0]}).then((response) => {

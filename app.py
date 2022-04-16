@@ -7,7 +7,7 @@ CORS(app) #comment this on deployment
 
 recommender = JokeRecommender()
 
-@app.route('/api/get_joke', methods=['POST'])
+@app.route('/get_joke', methods=['POST'])
 def get_joke():
     print("getting joke")
     data = request.get_json()
@@ -17,7 +17,7 @@ def get_joke():
     return {'joke': joke}
 
 
-@app.route('/api/rate_joke', methods=['POST'])
+@app.route('/rate_joke', methods=['POST'])
 def rate_joke():
     print("rating joke")
     data = request.get_json()
@@ -28,7 +28,7 @@ def rate_joke():
     return "Rated Joke"
 
 
-@app.route('/api/add_user', methods=['POST'])
+@app.route('/add_user', methods=['POST'])
 def add_user():
     print("setting user")
     data = request.get_json()
@@ -36,7 +36,7 @@ def add_user():
     recommender.add_new_user(user)
     return "Added User"
 
-@app.route('/api/close_session', methods=['POST'])
+@app.route('/close_session', methods=['POST'])
 def close_session():
     print("setting user")
     data = request.get_json()
