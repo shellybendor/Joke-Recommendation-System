@@ -1,13 +1,15 @@
 from flask import Flask, request
-from flask_cors import CORS #comment this on deployment
+from flask.helpers import send_from_directory
+from flask_cors import CORS, cross_origin #comment this on deployment
 from joke_recommender import JokeRecommender
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='build', static_url_path='')
 CORS(app) #comment this on deployment
 
 recommender = JokeRecommender()
 
 @app.route('/get_joke', methods=['POST'])
+@cross_origin()
 def get_joke():
     print("getting joke")
     data = request.get_json()
@@ -18,6 +20,7 @@ def get_joke():
 
 
 @app.route('/rate_joke', methods=['POST'])
+@cross_origin()
 def rate_joke():
     print("rating joke")
     data = request.get_json()
@@ -29,6 +32,7 @@ def rate_joke():
 
 
 @app.route('/add_user', methods=['POST'])
+@cross_origin()
 def add_user():
     print("setting user")
     data = request.get_json()
@@ -37,12 +41,17 @@ def add_user():
     return "Added User"
 
 @app.route('/close_session', methods=['POST'])
+@cross_origin()
 def close_session():
     print("setting user")
     data = request.get_json()
     user = data['user']
     recommender.add_new_user(user)
     return "Added User"
+
+@cross_origin()
+def server():
+    return send_from_directory(app.static_folder, 'index.html')
 
 
 if __name__ == '__main__':
