@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+your-humor-react/node_modules
 /.pnp
 .pnp.js
 
@@ -9,8 +10,8 @@
 /coverage
 
 # production
-# /build
-# firebase-config.js
+your-humor-react/build
+your-humor-react/firebase-config.js
 
 # misc
 .DS_Store
@@ -24,5 +25,5 @@ yarn-debug.log*
 yarn-error.log*
 
 # python
-venv
-__pycache__
+your-humor-flask/env
+your-humor-flask/__pycache__
