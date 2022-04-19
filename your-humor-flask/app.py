@@ -1,9 +1,19 @@
+import os
+import pandas as pd
 from flask import Flask, request, jsonify
-from flask_cors import CORS #comment this on deployment
+from flask_cors import CORS
 from joke_recommender import JokeRecommender
+from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 
 app = Flask(__name__)
-CORS(app) #comment this on deployment
+CORS(app)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+from models import Rating
 
 recommender = JokeRecommender()
 
@@ -11,9 +21,11 @@ recommender = JokeRecommender()
 def get_joke():
     print("getting joke")
     data = request.get_json()
+    ratings = Rating.query.all()
+    datframe = pd.DataFrame.from_dict([e.serialize() for e in ratings])
+    print(datframe)
     user = data['user']
-    joke = recommender.get_joke(user)
-    # print(joke)
+    joke = recommender.get_joke(user, datframe)
     return {'joke': joke}
 
 
@@ -22,9 +34,12 @@ def rate_joke():
     print("rating joke")
     data = request.get_json()
     user = data['user']
-    joke_num = data['joke_num']
+    joke_id = data['joke_id']
     rating = data['rating']
-    recommender.add_joke_rating(user, int(joke_num), int(rating))
+    new_rating = Rating(user, joke_id, rating)
+    db.session.add(new_rating)
+    db.session.commit()
+    recommender.add_joke_rating(user, joke_id, int(rating))
     return "Rated Joke"
 
 
@@ -32,13 +47,18 @@ def rate_joke():
 def add_user():
     print("setting user")
     data = request.get_json()
+    # ratings = Rating.query.filter(Rating.user_id == data['user']).all()
+    # datframe = pd.DataFrame.from_dict([e.serialize() for e in ratings])
+    # print(datframe)
     user = data['user']
     recommender.add_new_user(user)
+    # return jsonify([e.serialize() for e in ratings])
     return "Added User"
 
 @app.route("/", methods=["GET"])
 def tmp():
-    return jsonify({"response":"Welcome to my app"})
+    ratings = Rating.query.all()
+    return jsonify([e.serialize() for e in ratings])
 
 
 if __name__ == '__main__':
