@@ -6,4 +6,4 @@ The folder `your-humor-flask` contains the pythonic code running the backend of 
 The backend was deployed on heroku.
 
 The folder `your-humor-react` contains the frontend code.
-The frontend is deployed using github pages.
+The frontend is deployed using github pages: https://shellybendor.github.io/your-humor-deploy/
