@@ -24,6 +24,9 @@ class JokeRecommender:
         print("DONE INIT")
 
     def _save_content_matrix(self):
+        '''Reads words found in at least 4 jokes from a csv and creates a rating dataframe
+        for the jokes as 'virtual users'
+        '''
         common_words = pd.read_csv("common_words_in_jokes.csv")
         content_ratings = pd.DataFrame(columns=["user_id", "item_id", "rating"])
         for word in common_words["word"]:
@@ -32,20 +35,23 @@ class JokeRecommender:
                     content_ratings.loc[len(content_ratings)] = np.array([word, f"joke_{joke_num + 1}", 10])
         return content_ratings
 
-    def _preprocess_data(self, df):
-        new_df = df.drop('num_ratings', axis=1)
-        new_df.replace(self.NOT_RATED, np.nan, inplace=True)
-        new_df = new_df.stack().reset_index().rename(columns={'level_0': 'user_id', 'level_1': 'item_id', 0: 'rating'})
-        return new_df
-
-    def _get_random_new_joke(self, ratings_df, user: str):
-        items_known = ratings_df.query("user_id == @user")["item_id"]
-        unheard_jokes = self._all_jokes - set(items_known)
+    def _get_random_new_joke(self, user: str, ratings_df):
+        '''Finds a joke not yet rated by the user.
+        Returns the joke ID and the joke.
+        '''
+        unheard_jokes = self._all_jokes
+        if ratings_df:
+            items_known = ratings_df.query("user_id == @user")["item_id"]
+            unheard_jokes = unheard_jokes - set(items_known)
         joke_id = random.choice(list(unheard_jokes))
         joke_num = int(joke_id.replace("joke_", "")) -1
         return joke_id, self._jokes_df["jokes"][joke_num]
 
-    def _get_recommended_joke(self, ratings_df, user: str):
+    def _get_recommended_joke(self, user: str, ratings_df: pd.DataFrame):
+        '''Retrains the model with the rating data of the user and finds the most recommended joke
+        for them.
+        Returns the joke ID and the joke.
+        '''
         user_ratings = ratings_df[ratings_df["user_id"] == user]
         self._mf.update_users(
             user_ratings[["user_id", "item_id"]], user_ratings["rating"], lr=0.001, n_epochs=20, verbose=0
@@ -56,21 +62,29 @@ class JokeRecommender:
         joke_num = int(joke_id.replace("joke_", "")) -1
         return joke_id, self._jokes_df["jokes"][joke_num]
 
-    def get_joke(self, user_name: str, added_ratings: pd.DataFrame):
-        if not added_ratings.empty:
+    def get_joke(self, user_name: str, added_ratings=None):
+        '''Given a dataframe of the new ratings of all users and a user name, returns a joke for the user to rate.
+        If the user has rated less than 10 joke, the joke is random, otherwise it is recommended.
+        '''
+        num_jokes_rated = 0
+        if added_ratings:
             added_ratings = added_ratings.rename(columns={'user_name': 'user_id'})
             added_ratings = added_ratings.astype({"rating": np.float32})
-        num_jokes_rated = (added_ratings.user_id == user_name).sum()
+            num_jokes_rated = (added_ratings.user_id == user_name).sum()
         if num_jokes_rated < 10:
             print("Getting random joke")
-            return self._get_random_new_joke(added_ratings, user_name)
+            return self._get_random_new_joke(user_name, added_ratings)
         else:
             print("Getting recommended joke")
-            return self._get_recommended_joke(added_ratings, user_name)
+            return self._get_recommended_joke(user_name, added_ratings)
 
     def evaluate_model(self, with_content=False):
-        # user_item_df = pd.read_csv("user_item_matrix.csv", dtype=np.float32)
-        # ratings_df = self._preprocess_data(user_item_df)
+        """Evaluates the models perfomance by splitting into a test set and a training set.
+
+        Args:
+            with_content (bool, optional): Should model by evaluated with the jokes content taken into account.
+                Defaults to False.
+        """
         ratings_df = pd.read_csv("ratings_matrix.csv").astype({"rating": np.float32})
         counts = ratings_df["user_id"].value_counts()
         eval_data = ratings_df[ratings_df.user_id.isin(counts.index[counts.gt(1)])]
@@ -117,6 +131,7 @@ class JokeRecommender:
         print(f"\nTest Normalized RMSE: {norm_rmse:.4f}")
 
 
+# THE FOLLOWING CODE IS USED ON MY LOCAL COMPUTER TO EVALUATE THE MODEL'S PREFORMANCE
 # recommender = JokeRecommender(pd.DataFrame())
 # print("Evaluating Model without content data")
 # recommender.evaluate_model()
