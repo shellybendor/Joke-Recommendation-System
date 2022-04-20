@@ -28,7 +28,7 @@ def get_joke():
     data = request.get_json()
     # ratings = Rating.query.all()
     ratings = Rating.query.filter(Rating.user_id == data['user']).all()
-    ratings_df = pd.DataFrame.from_dict([e.serialize() for e in ratings]) if ratings else None
+    ratings_df = pd.DataFrame.from_dict([e.serialize() for e in ratings]) if ratings else pd.DataFrame()
     user = data['user']
     joke = recommender.get_joke(user, ratings_df)
     return {'joke': joke}

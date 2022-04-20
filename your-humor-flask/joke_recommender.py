@@ -40,7 +40,7 @@ class JokeRecommender:
         Returns the joke ID and the joke.
         '''
         unheard_jokes = self._all_jokes
-        if ratings_df:
+        if not ratings_df.empty:
             items_known = ratings_df.query("user_id == @user")["item_id"]
             unheard_jokes = unheard_jokes - set(items_known)
         joke_id = random.choice(list(unheard_jokes))
@@ -62,12 +62,12 @@ class JokeRecommender:
         joke_num = int(joke_id.replace("joke_", "")) -1
         return joke_id, self._jokes_df["jokes"][joke_num]
 
-    def get_joke(self, user_name: str, added_ratings=None):
+    def get_joke(self, user_name: str, added_ratings: pd.DataFrame):
         '''Given a dataframe of the new ratings of all users and a user name, returns a joke for the user to rate.
         If the user has rated less than 10 joke, the joke is random, otherwise it is recommended.
         '''
         num_jokes_rated = 0
-        if added_ratings:
+        if not added_ratings.empty:
             added_ratings = added_ratings.rename(columns={'user_name': 'user_id'})
             added_ratings = added_ratings.astype({"rating": np.float32})
             num_jokes_rated = (added_ratings.user_id == user_name).sum()
