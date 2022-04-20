@@ -28,13 +28,7 @@ export function AuthProvider({children}) {
 
     useEffect(() => {
         if (currentUser) {
-            axios.post("https://joke-recommender-flask.herokuapp.com/add_user", {user: currentUser.email}).then((response) => {
-                console.log(response);
-                getJoke();
-            })
-            .catch((err) => {
-                console.log(err);
-            });
+            getJoke();
         }
         setLoading(false)
     }, [currentUser])
@@ -55,7 +49,7 @@ export function AuthProvider({children}) {
         setLoading(true)
         axios.post('https://joke-recommender-flask.herokuapp.com/rate_joke', {
             user: currentUser.email,
-            joke_num: currentJoke[0],
+            joke_id: currentJoke[0],
             rating: rating[0]}).then((response) => {
                 console.log(response)
                 getJoke()

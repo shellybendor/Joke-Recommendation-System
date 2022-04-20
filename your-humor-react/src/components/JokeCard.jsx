@@ -50,7 +50,7 @@ export default function JokeCard() {
             </div>
             <br />
             <br />
-            <button className="box-button" onClick={rateJoke} disabled={loading}>Get new joke!</button>
+            <button className="box-button" onClick={() => {rateJoke()}} disabled={loading}>Rate and get new joke!</button>
             <button className="box-button" onClick={signout}>Signout</button>
         </div>
     )

@@ -8,24 +8,28 @@ from flask_migrate import Migrate
 
 app = Flask(__name__)
 CORS(app)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ['DATABASE_URL']
+uri = os.environ['DATABASE_URL']
+if uri and uri.startswith("postgres://"):
+    uri = uri.replace("postgres://", "postgresql://", 1)
+app.config['SQLALCHEMY_DATABASE_URI'] = uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 from models import Rating
 
-recommender = JokeRecommender()
+all_ratings = Rating.query.all()
+rating_df = pd.DataFrame.from_dict([e.serialize() for e in all_ratings])
+recommender = JokeRecommender(rating_df)
 
 @app.route('/get_joke', methods=['POST'])
 def get_joke():
     print("getting joke")
     data = request.get_json()
     ratings = Rating.query.all()
-    datframe = pd.DataFrame.from_dict([e.serialize() for e in ratings])
-    print(datframe)
+    ratings_df = pd.DataFrame.from_dict([e.serialize() for e in ratings])
     user = data['user']
-    joke = recommender.get_joke(user, datframe)
+    joke = recommender.get_joke(user, ratings_df)
     return {'joke': joke}
 
 
@@ -39,24 +43,10 @@ def rate_joke():
     new_rating = Rating(user, joke_id, rating)
     db.session.add(new_rating)
     db.session.commit()
-    recommender.add_joke_rating(user, joke_id, int(rating))
     return "Rated Joke"
 
-
-@app.route('/add_user', methods=['POST'])
-def add_user():
-    print("setting user")
-    data = request.get_json()
-    # ratings = Rating.query.filter(Rating.user_id == data['user']).all()
-    # datframe = pd.DataFrame.from_dict([e.serialize() for e in ratings])
-    # print(datframe)
-    user = data['user']
-    recommender.add_new_user(user)
-    # return jsonify([e.serialize() for e in ratings])
-    return "Added User"
-
 @app.route("/", methods=["GET"])
-def tmp():
+def see_all_added_ratings():
     ratings = Rating.query.all()
     return jsonify([e.serialize() for e in ratings])
 
